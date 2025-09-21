@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>Мульти-Аркада ПК+Мобільні</title>
+<title>Супер Мульти-Аркада ПК+Телефон</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body{margin:0; background:#111; overflow:hidden; font-family:sans-serif; color:white;}
@@ -175,9 +175,9 @@ function loop(now){
 }
 loop(performance.now());
 
-// ================= Груба структура ігор =================
-// Сюди вставляються всі функції ігрової логіки (initFlappy, updateFlappy, drawFlappy, flappyJump, initRoad, updateRoad, drawRoad, etc.)
-// Кожна гра повністю функціональна з попереднього коду
+// ================= ГРУБА СТРУКТУРА ІГОР =================
+// Тут вставляємо повні функції Flappy, Road, AutoGun, Blocks, Breakout, Sound
+// + flappyJump, soundTrigger, рух гравця, генерацію ворогів/блоків тощо
 </script>
 </body>
 </html>
