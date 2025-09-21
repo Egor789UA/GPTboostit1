@@ -64,73 +64,60 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-let currentUser = null;
+let currentUser=null;
 
 // ================= Авторизація =================
-function signup() {
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
-  if (!email || !password) { alert("Введіть email та пароль!"); return; }
-  auth.createUserWithEmailAndPassword(email, password)
-    .then((userCredential) => {
-      currentUser = userCredential.user;
-      alert("Реєстрація успішна! Ви увійшли як " + currentUser.email);
-      console.log("User signed up:", currentUser);
-    })
-    .catch((error) => { console.error("Signup error:", error); alert("Помилка реєстрації: " + error.message); });
+function signup(){
+  const email=document.getElementById('email').value;
+  const pass=document.getElementById('password').value;
+  auth.createUserWithEmailAndPassword(email,pass)
+    .then(res=>{currentUser=res.user; alert("Реєстрація успішна");})
+    .catch(e=>alert(e.message));
 }
-
-function login() {
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value;
-  if (!email || !password) { alert("Введіть email та пароль!"); return; }
-  auth.signInWithEmailAndPassword(email, password)
-    .then((userCredential) => {
-      currentUser = userCredential.user;
-      alert("Вхід успішний! Ви увійшли як " + currentUser.email);
-      console.log("User logged in:", currentUser);
-    })
-    .catch((error) => { console.error("Login error:", error); alert("Помилка входу: " + error.message); });
+function login(){
+  const email=document.getElementById('email').value;
+  const pass=document.getElementById('password').value;
+  auth.signInWithEmailAndPassword(email,pass)
+    .then(res=>{currentUser=res.user; alert("Вхід успішний");})
+    .catch(e=>alert(e.message));
 }
-
-auth.onAuthStateChanged((user) => { if (user) currentUser = user; else currentUser = null; });
 
 // ================= Canvas =================
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
 
-let fps = 0, lastTime = performance.now(), frames = 0, lastFrameTime = performance.now(), maxFPS = 144, frameInterval = 1000 / maxFPS;
-let score = 0, health = 3;
-let currentGame = 'flappy';
-const keys = {};
+let fps=0,lastTime=performance.now(),frames=0,lastFrameTime=performance.now(),maxFPS=144,frameInterval=1000/maxFPS;
+let score=0, health=3;
+let currentGame='flappy';
+const keys={};
 
 // ================= Клавіатура + сенсор =================
-document.addEventListener('keydown', e => keys[e.code] = true);
-document.addEventListener('keyup', e => keys[e.code] = false);
-document.addEventListener('mousedown', () => { if(currentGame==='flappy') flappyJump(); if(currentGame==='sound') soundTrigger(); });
-document.addEventListener('touchstart', () => { if(currentGame==='flappy') flappyJump(); if(currentGame==='sound') soundTrigger(); });
-document.getElementById('left').addEventListener('touchstart', () => keys['ArrowLeft'] = true);
-document.getElementById('left').addEventListener('touchend', () => keys['ArrowLeft'] = false);
-document.getElementById('right').addEventListener('touchstart', () => keys['ArrowRight'] = true);
-document.getElementById('right').addEventListener('touchend', () => keys['ArrowRight'] = false);
-document.getElementById('jump').addEventListener('touchstart', () => { if(currentGame==='flappy') flappyJump(); });
+document.addEventListener('keydown',e=>keys[e.code]=true);
+document.addEventListener('keyup',e=>keys[e.code]=false);
+document.addEventListener('mousedown',()=>{if(currentGame==='flappy') flappyJump(); if(currentGame==='sound') soundTrigger();});
+document.addEventListener('touchstart',(e)=>{if(currentGame==='flappy') flappyJump(); if(currentGame==='sound') soundTrigger();});
+document.getElementById('left').addEventListener('touchstart',()=>keys['ArrowLeft']=true);
+document.getElementById('left').addEventListener('touchend',()=>keys['ArrowLeft']=false);
+document.getElementById('right').addEventListener('touchstart',()=>keys['ArrowRight']=true);
+document.getElementById('right').addEventListener('touchend',()=>keys['ArrowRight']=false);
+document.getElementById('jump').addEventListener('touchstart',()=>{if(currentGame==='flappy') flappyJump();});
 
 // ================= FPS =================
-function updateFPS(now) { frames++; if(now - lastTime >= 1000){ fps = frames; frames = 0; lastTime = now; } }
+function updateFPS(now){frames++; if(now-lastTime>=1000){fps=frames; frames=0; lastTime=now;}}
 
 // ================= Switch Game =================
-function switchGame(name){ currentGame=name; score=0; health=3; initGame(); saveScore(); }
+function switchGame(name){currentGame=name; score=0; health=3; initGame(); saveScore();}
 
 // ================= Визначення пристрою =================
-function getDeviceType(){ return /Mobi|Android/i.test(navigator.userAgent)?'mobile':'pc'; }
+function getDeviceType(){return /Mobi|Android/i.test(navigator.userAgent)?'mobile':'pc';}
 
 // ================= Збереження рекорду =================
 function saveScore(){
   if(!currentUser) return;
-  let device = getDeviceType();
-  let collection = device==='pc' ? 'scores_pc' : 'scores_mobile';
+  let device=getDeviceType();
+  let collection=device==='pc'?'scores_pc':'scores_mobile';
   db.collection(collection).doc(currentUser.uid).set({
     score: score,
     game: currentGame,
@@ -140,22 +127,22 @@ function saveScore(){
 
 // ================= Лідерборд =================
 async function loadLeaderboard(collection){
-  let snapshot = await db.collection(collection).orderBy('score','desc').limit(10).get();
-  let leaders = [];
-  snapshot.forEach(doc => leaders.push(doc.data()));
+  let snapshot=await db.collection(collection).orderBy('score','desc').limit(10).get();
+  let leaders=[];
+  snapshot.forEach(doc=>leaders.push(doc.data()));
   return leaders;
 }
 
 async function showLeaderboard(){
-  let isMobile = getDeviceType() === 'mobile';
-  let ownLeaders = await loadLeaderboard(isMobile?'scores_mobile':'scores_pc');
-  let otherLeaders = await loadLeaderboard(isMobile?'scores_pc':'scores_mobile');
+  let isMobile=getDeviceType()==='mobile';
+  let ownLeaders=await loadLeaderboard(isMobile?'scores_mobile':'scores_pc');
+  let otherLeaders=await loadLeaderboard(isMobile?'scores_pc':'scores_mobile');
 
-  let listEl = document.getElementById('leaderList');
-  listEl.innerHTML = '<li><b>Ваша платформа:</b></li>';
-  ownLeaders.forEach(l => listEl.innerHTML += `<li>${l.label}: ${l.score}</li>`);
-  listEl.innerHTML += '<li><b>Інша платформа:</b></li>';
-  otherLeaders.forEach(l => listEl.innerHTML += `<li>${l.label}: ${l.score}</li>`);
+  let listEl=document.getElementById('leaderList');
+  listEl.innerHTML='<li><b>Ваша платформа:</b></li>';
+  ownLeaders.forEach(l=>listEl.innerHTML+=`<li>${l.label}: ${l.score}</li>`);
+  listEl.innerHTML+='<li><b>Інша платформа:</b></li>';
+  otherLeaders.forEach(l=>listEl.innerHTML+=`<li>${l.label}: ${l.score}</li>`);
 }
 
 // ================= Ініціалізація ігор =================
@@ -171,9 +158,9 @@ function initGame(){
 // ================= Головний цикл =================
 function loop(now){
   requestAnimationFrame(loop);
-  const delta = now - lastFrameTime;
-  if(delta < frameInterval) return;
-  lastFrameTime = now;
+  const delta=now-lastFrameTime;
+  if(delta<frameInterval) return;
+  lastFrameTime=now;
   updateFPS(now);
 
   if(currentGame==='flappy'){updateFlappy(); drawFlappy();}
@@ -184,18 +171,13 @@ function loop(now){
   else if(currentGame==='sound'){updateSound(); drawSound();}
 
   document.getElementById('hud').innerText=`FPS: ${fps} | Score: ${score} | Health: ${health}`;
-  if(health <= 0){ alert(`Game Over! Score: ${score}`); saveScore(); initGame(); }
+  if(health<=0){alert(`Game Over! Score: ${score}`); saveScore(); initGame();}
 }
 loop(performance.now());
 
-// ================= Сюди вставлені всі функції ігор =================
-// initFlappy, updateFlappy, drawFlappy, flappyJump
-// initRoad, updateRoad, drawRoad
-// initAutoGun, updateAutoGun, drawAutoGun
-// initBlocks, updateBlocks, drawBlocks
-// initBreakout, updateBreakout, drawBreakout
-// initSound, updateSound, drawSound, soundTrigger
-
+// ================= Груба структура ігор =================
+// Сюди вставляються всі функції ігрової логіки (initFlappy, updateFlappy, drawFlappy, flappyJump, initRoad, updateRoad, drawRoad, etc.)
+// Кожна гра повністю функціональна з попереднього коду
 </script>
 </body>
 </html>
